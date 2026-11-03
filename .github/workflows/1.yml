@@ -1,0 +1,55 @@
+name: Old-device MediaTek checks
+
+on:
+  push:
+    branches:
+      - old-devices-mtk
+    paths:
+      - "**/*.py"
+      - "old-devices/**"
+      - "patches/**"
+      - "tools/**"
+      - "requirements*.txt"
+      - "pyproject.toml"
+      - ".github/workflows/old-devices-mtk.yml"
+  pull_request:
+    branches:
+      - old-devices-mtk
+    paths:
+      - "**/*.py"
+      - "old-devices/**"
+      - "patches/**"
+      - "tools/**"
+      - "requirements*.txt"
+      - "pyproject.toml"
+      - ".github/workflows/old-devices-mtk.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: old-devices-mtk-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  checks:
+    name: Python checks (not a ROM build)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Install project and lint dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements-dev.txt
+      - name: Lint
+        run: python -m ruff check .
+      - name: Compile Python sources
+        run: python -m compileall -q .
+      - name: Validate companion manifest
+        run: python -m json.tool old-devices/companions.json > /dev/null
